@@ -48,6 +48,8 @@ android.enable_androidx = True
 #   POST_NOTIFICATIONS, VIBRATE      — таймеры и напоминания
 #   QUERY_ALL_PACKAGES               — «открой <приложение>» по названию
 android.permissions = INTERNET,ACCESS_NETWORK_STATE,ACCESS_WIFI_STATE,CHANGE_WIFI_STATE,ACCESS_FINE_LOCATION,ACCESS_COARSE_LOCATION,CALL_PHONE,READ_CONTACTS,SEND_SMS,RECORD_AUDIO,CAMERA,POST_NOTIFICATIONS,VIBRATE,QUERY_ALL_PACKAGES,FOREGROUND_SERVICE
+android.archs = arm64-v8a
+android.allow_python3 = True
 
 [buildozer]
 log_level = 2
