@@ -24,6 +24,8 @@ jobs:
           pip install buildozer cython
 
       - name: Build with Buildozer
+        env:
+         MAKEFLAGS: "-j1"
         run: |
           export CMAKE_BUILD_PARALLEL_LEVEL=1
           export MAKEFLAGS="-j1"
