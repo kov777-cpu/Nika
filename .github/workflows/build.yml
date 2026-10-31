@@ -24,8 +24,6 @@ jobs:
           pip install buildozer cython
 
       - name: Build with Buildozer
-        env:
-          MAKEFLAGS: "-j1"
         run: yes | buildozer android debug
 
       - name: Upload APK
