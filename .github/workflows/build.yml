@@ -2,33 +2,77 @@ name: Build APK
 
 on:
   push:
-    branches: [ "main", "master" ]
-  workflow_dispatch:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:  # Позволяет запускать вручную из вкладки Actions
 
 jobs:
-  build:
-    runs-on: ubuntu-22.04
+  build-android:
+    name: Build for Android
+    runs-on: ubuntu-22.04  # Зафиксировано, чтобы не было проблем с libtinfo5
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.14.2'
+          python-version: '3.11'  # 3.11 стабильнее для p4a, чем 3.12/3.14
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
-          sudo apt update
-          sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
+          sudo apt-get update
+          sudo apt-get install -y \
+            git zip unzip openjdk-17-jdk \
+            python3-pip autoconf libtool pkg-config \
+            zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 \
+            cmake libffi-dev libssl-dev
+
+      - name: Install Buildozer and Cython
+        run: |
           pip install --upgrade pip
           pip install buildozer cython
 
+      - name: Clone python-for-android locally
+        run: |
+          # Клонируем develop-ветку, где могут быть фиксы
+          git clone https://github.com/kivy/python-for-android.git --depth 1 -b develop p4a-local
+
+      - name: Create charset_normalizer recipe
+        run: |
+          mkdir -p p4a-local/pythonforandroid/recipes/charset_normalizer
+          cat > p4a-local/pythonforandroid/recipes/charset_normalizer/__init__.py << 'EOF'
+          from pythonforandroid.recipe import PythonRecipe
+
+          class CharsetNormalizerRecipe(PythonRecipe):
+              version = '3.3.2'
+              url = 'https://files.pythonhosted.org/packages/source/c/charset-normalizer/charset_normalizer-{version}.tar.gz'
+              depends = ['setuptools']
+              call_hostpython_via_targetpython = False
+              site_packages_name = 'charset_normalizer'
+
+          recipe = CharsetNormalizerRecipe()
+          EOF
+
+      - name: Configure buildozer.spec to use local p4a
+        run: |
+          # Удаляем старую строку p4a.branch, если она есть
+          sed -i '/^# p4a.branch =/d' buildozer.spec
+          sed -i '/^p4a.branch =/d' buildozer.spec
+          # Добавляем путь к локальному p4a
+          echo "p4a.source_dir = $(pwd)/p4a-local" >> buildozer.spec
+          # На всякий случай убеждаемся, что charset_normalizer не указан с жёсткой версией,
+          # которая может конфликтовать с рецептом (рецепт сам скачает 3.3.2)
+          # Если в requirements есть certifi, он потянет charset_normalizer через рецепт.
+
       - name: Build with Buildozer
         run: |
-          sed -i 's/^# p4a.branch = .*/p4a.branch = develop/' buildozer.spec
-          yes | buildozer android debug
+          # --verbose для отладки, если упадёт — будет видно, на каком шаге
+          yes | buildozer -v android debug
 
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: nika-apk
