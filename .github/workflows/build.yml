@@ -5,12 +5,12 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
-  workflow_dispatch:  # Позволяет запускать вручную из вкладки Actions
+  workflow_dispatch:
 
 jobs:
   build-android:
     name: Build for Android
-    runs-on: ubuntu-22.04  # Зафиксировано, чтобы не было проблем с libtinfo5
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout repository
@@ -19,7 +19,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'  # 3.11 стабильнее для p4a, чем 3.12/3.14
+          python-version: '3.11'
 
       - name: Install system dependencies
         run: |
@@ -34,11 +34,6 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install buildozer cython
-
-      - name: Clone python-for-android locally
-        run: |
-          # Клонируем develop-ветку, где могут быть фиксы
-          git clone https://github.com/kivy/python-for-android.git --depth 1 -b develop p4a-local
 
       - name: Create local recipe for charset_normalizer
         run: |
@@ -56,16 +51,21 @@ jobs:
           recipe = CharsetNormalizerRecipe()
           EOF
 
-      - name: Point buildozer to local recipes
+      - name: Point buildozer to local recipes (absolute path)
         run: |
-          # Удаляем старые настройки p4a, если есть
-          sed -i '/^p4a.source_dir/d' buildozer.spec
           sed -i '/^p4a.local_recipes/d' buildozer.spec
-          # ВАЖНО: используем абсолютный путь, чтобы Buildozer не потерял его при смене CWD
-          echo "p4a.local_recipes = $(pwd)/p4a-recipes" >> buildozer.spec
+          echo "p4a.local_recipes = /home/runner/work/Nika/Nika/p4a-recipes" >> buildozer.spec
+          grep "p4a.local_recipes" buildozer.spec
+
+      - name: Ensure charset_normalizer is in requirements
+        run: |
+          # 确保 charset_normalizer 被显式列出，否则 p4a 可能不会去查找对应的 recipe
+          # 注意：具体版本需要和 recipe 中的 version 保持一致
+          sed -i 's/^requirements = .*/requirements = python3==3.13.9, hostpython3==3.13.9, kivy==2.3.1, pyjnius, android, certifi, charset_normalizer==3.3.2/' buildozer.spec
+          grep "^requirements" buildozer.spec
+
       - name: Build with Buildozer
         run: |
-          # --verbose для отладки, если упадёт — будет видно, на каком шаге
           yes | buildozer -v android debug
 
       - name: Upload APK artifact
