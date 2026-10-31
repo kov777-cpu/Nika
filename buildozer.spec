@@ -17,7 +17,7 @@ version = 2.0.0
 # pyjnius — мост к Android (Intent'ы, контакты, TTS, wi-fi)
 # android — права, activity, запуск
 # certifi — чтобы https-погода работала с проверкой сертификата
-requirements = python3,kivy==2.3.1,pyjnius,android,certifi
+requirements = python3==3.11.9,kivy==2.3.1,pyjnius,android,certifi
 
 # ---------- иконки ----------
 icon.filename = %(source.dir)s/assets/icon.png
