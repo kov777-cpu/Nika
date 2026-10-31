@@ -40,10 +40,10 @@ jobs:
           # Клонируем develop-ветку, где могут быть фиксы
           git clone https://github.com/kivy/python-for-android.git --depth 1 -b develop p4a-local
 
-      - name: Create charset_normalizer recipe
+      - name: Create local recipe for charset_normalizer
         run: |
-          mkdir -p p4a-local/pythonforandroid/recipes/charset_normalizer
-          cat > p4a-local/pythonforandroid/recipes/charset_normalizer/__init__.py << 'EOF'
+          mkdir -p p4a-recipes/charset_normalizer
+          cat > p4a-recipes/charset_normalizer/__init__.py << 'EOF'
           from pythonforandroid.recipe import PythonRecipe
 
           class CharsetNormalizerRecipe(PythonRecipe):
@@ -56,17 +56,13 @@ jobs:
           recipe = CharsetNormalizerRecipe()
           EOF
 
-      - name: Configure buildozer.spec to use local p4a
+      - name: Point buildozer to local recipes
         run: |
-          # Удаляем старую строку p4a.branch, если она есть
-          sed -i '/^# p4a.branch =/d' buildozer.spec
-          sed -i '/^p4a.branch =/d' buildozer.spec
-          # Добавляем путь к локальному p4a
-          echo "p4a.source_dir = $(pwd)/p4a-local" >> buildozer.spec
-          # На всякий случай убеждаемся, что charset_normalizer не указан с жёсткой версией,
-          # которая может конфликтовать с рецептом (рецепт сам скачает 3.3.2)
-          # Если в requirements есть certifi, он потянет charset_normalizer через рецепт.
-
+          # Удаляем старые настройки p4a, если есть
+          sed -i '/^p4a.source_dir/d' buildozer.spec
+          sed -i '/^p4a.local_recipes/d' buildozer.spec
+          # ВАЖНО: используем абсолютный путь, чтобы Buildozer не потерял его при смене CWD
+          echo "p4a.local_recipes = $(pwd)/p4a-recipes" >> buildozer.spec
       - name: Build with Buildozer
         run: |
           # --verbose для отладки, если упадёт — будет видно, на каком шаге
