@@ -25,11 +25,8 @@ jobs:
 
       - name: Build with Buildozer
         env:
-         MAKEFLAGS: "-j1"
-        run: |
-          export CMAKE_BUILD_PARALLEL_LEVEL=1
-          export MAKEFLAGS="-j1"
-          yes | buildozer android debug
+          MAKEFLAGS: "-j1"
+        run: yes | buildozer android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
