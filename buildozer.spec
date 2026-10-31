@@ -35,7 +35,8 @@ android.archs = arm64-v8a
 android.allow_backup = True
 android.accept_sdk_license = True
 android.enable_androidx = True
-
+# Ограничивает количество параллельных задач при сборке
+android.num_jobs = 1
 # Зачем каждое право:
 #   INTERNET, ACCESS_NETWORK_STATE   — поиск, погода
 #   ACCESS_WIFI_STATE, CHANGE_WIFI_STATE, ACCESS_FINE_LOCATION/COARSE
